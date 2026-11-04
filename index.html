@@ -985,6 +985,8 @@ const TEAM_PROFILES = [
   { id: 'burhan', name: 'Burhan Ali', avatar: 'BA', color: '#059669', lightBg: '#ecfdf5' },
   { id: 'shaharyar', name: 'Shaharyar Ali', avatar: 'SA', color: '#7c3aed', lightBg: '#f5f3ff' }
 ];
+// Alias: team dashboard & trend chart reference TEAM (was undefined -> crash)
+const TEAM = TEAM_PROFILES;
 
 // Clean legacy localStorage keys that stored user IDs or PINs
 try {
@@ -1177,6 +1179,10 @@ async function submitProfileLogin() {
 function logoutUser(msg = '') {
   currentUser = null;
   try { sessionStorage.removeItem('itify_session'); } catch(e) {}
+  // Don't leave the previous user's leads in this browser (shared devices)
+  leads = [];
+  try { localStorage.removeItem('fieldnoteLeads'); } catch(e) {}
+  try { persistToIndexedDB([]); } catch(e) {}
   applyUserSession();
   openLoginDialog(true);
   if (msg) {
@@ -1722,6 +1728,19 @@ function applyUserSession() {
   const roleLabel = document.getElementById('userRoleLabel');
   const teamWrap = document.getElementById('teamFilterWrap');
   
+  // Signed-out state (first visit, logout, expired PIN). Previously this crashed on
+  // currentUser.avatar and aborted the rest of the app's startup script.
+  if (!currentUser) {
+    if (avatar) { avatar.textContent = '?'; avatar.style.background = '#94a3b8'; }
+    if (nameLabel) nameLabel.textContent = 'Not signed in';
+    if (roleLabel) roleLabel.textContent = '';
+    const teamNavBtnOut = document.getElementById('teamNavBtn');
+    if (teamNavBtnOut) teamNavBtnOut.style.display = 'none';
+    if (teamWrap) teamWrap.style.display = 'none';
+    try { render(); } catch (e) { console.warn('Render (signed out):', e); }
+    return;
+  }
+  
   if (avatar) {
     avatar.textContent = currentUser.avatar;
     avatar.style.background = currentUser.color;
@@ -1759,7 +1778,7 @@ function applyUserSession() {
     initCloudSync(false);
   }
 }
-const seedLeads = [{"id": "l1793295380692", "name": "Dr Upadhyay", "company": "Udpadyay Clinic", "phone": "9194701906", "alternatePhone": "", "email": "vtdrupadhyay@gmail.com", "website": "", "industry": "Healthcare", "product": "MyOperator", "status": "Expected Closure", "totalAmount": 30000.0, "followUp": "2026-10-30", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Interested in for 2 user plan. Demo created- KYC process to be completed by tomorrow.", "noteEntries": [{"text": "Interested in for 2 user plan. Demo created- KYC process to be completed by tomorrow.", "createdAt": "2026-10-29T17:36:20.692Z"}], "updatedAt": "2026-10-29T18:53:50.987Z"}, {"id": "l1793277046746", "name": "Ravi Kumar", "company": "HEGDE HEALTHCARE PRIVATE LIMITED", "phone": "7386006000", "alternatePhone": "", "email": "digitalmanager@hegdehospital.com", "website": "www.hegdehospital.com", "industry": "Healthcare", "product": "Sb AIBOT", "status": "Follow Up", "totalAmount": 0, "followUp": "2026-11-03", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Customer is interested in AI voicebot services but currently using MyOperator. I have asked him to compare quality, price.", "noteEntries": [{"text": "Customer is interested in AI voicebot services but currently using MyOperator. I have asked him to compare quality, price.", "createdAt": "2026-10-29T12:30:46.746Z"}], "updatedAt": "2026-10-29T18:32:50.990Z"}, {"id": "l1793276152732", "name": "Deepak Yadav", "company": "Land Financials Services", "phone": "8319620648", "alternatePhone": "", "email": "landdfinancialsservices@gmail.com", "website": "", "industry": "BFSI", "product": "MyOperator", "status": "Interested", "totalAmount": 0, "followUp": "2026-11-09", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Asked to call back after Diwali", "noteEntries": [{"text": "Asked to call back after Diwali", "createdAt": "2026-10-29T12:15:52.732Z"}], "updatedAt": "2026-10-29T18:56:05.059Z"}, {"id": "l1793275967693", "name": "Garvit", "company": "Lets Vitrix", "phone": "6397562784", "alternatePhone": "", "email": "founder@letsvitrix.com", "website": "www.letsvitrix.com", "industry": "Marketing Agency", "product": "MyOperator", "status": "Follow Up", "totalAmount": 0, "followUp": "2026-11-03", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Asked to call back in Nov, he will looking to onboard cloud telephony", "noteEntries": [{"text": "Asked to call back in Nov, he will looking to onboard cloud telephony", "createdAt": "2026-10-29T12:12:47.693Z"}], "updatedAt": "2026-10-29T18:57:22.210Z"}, {"id": "l1793275755662", "name": "Ananthan", "company": "Writer Corporation", "phone": "9769283407", "alternatePhone": "", "email": "ananthan.g@writercorporation.com", "website": "www.writercorporation.com", "industry": "BFSI", "product": "Sb AIBOT", "status": "Demo Schedule", "totalAmount": 0, "followUp": "2026-11-02", "wonDate": "", "owner": "Burhan Ali", "revenueType": "New Revenue", "notes": "Schedule demo at 4.30 Pm tomorrow. Receive email and want to initiate the bot accordingly. 50-100 calls a day. \n\nMotnhly rental 25000 per month", "noteEntries": [{"text": "Schedule demo at 4.30 Pm tomorrow. Receive email and want to initiate the bot accordingly. 50-100 calls a day. \n\nMotnhly rental 25000 per month\n", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:32:50.990Z"}, {"id": "l1793274860271", "name": "Rahul Srivastav", "company": "Tynor Orthotics Pvt Ltd", "phone": "8178306695", "alternatePhone": "", "email": "rahul.s@tynor.com", "website": "https://www.tynorstore.com", "industry": "Healthcare", "product": "Sb AIBOT", "status": "Interested", "totalAmount": 0, "followUp": "2026-11-03", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Customer Reply: We are right now working on implementing CRM after that we need a AI bot things for chat and email things . Will connect with you", "noteEntries": [{"text": "Customer Reply: We are right now working on implementing CRM after that we need a AI bot things for chat and email things . Will connect with you", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:56:52.291Z"}, {"id": "l1793274636604", "name": "Manish", "company": "Health Heart Pathcare Pvt. Ltd.", "phone": "9354253572", "alternatePhone": "", "email": "manish@healthheart.in", "website": "www.healthheart.in", "industry": "Healthcare", "product": "Sb AIBOT", "status": "Follow Up", "totalAmount": 0, "followUp": "2026-11-02", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Interested for Ai voicebot", "noteEntries": [{"text": "Interested for Ai voicebot\n", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:32:50.990Z"}, {"id": "l1793274064193", "name": "Harshita Gupta", "company": "Vedam", "phone": "8874250816", "alternatePhone": "", "email": "harshita.gupta@vedam.org", "website": "www.Vedam.org", "industry": "", "product": "MyOperator", "status": "Follow Up", "totalAmount": 0, "followUp": "2026-11-02", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Details shared with Harshita for MyOperator services - IVR, Voicebot, Truecaller etc. Need a week time to revert back.\n\nEducational Institute", "noteEntries": [{"text": "Details shared with Harshita for MyOperator services - IVR, Voicebot, Truecaller etc. Need a week time to revert back.\n\nEducational Institute", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:32:50.990Z"}, {"id": "l1793273450270", "name": "Dilip Madukar", "company": "The Rangrez", "phone": "9718784458", "alternatePhone": "", "email": "dilipmadhukar@gmail.com", "website": "", "industry": "", "product": "Sb AIBOT", "status": "Follow Up", "totalAmount": 0, "followUp": "2026-11-04", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Intersted in AI voicebot and chatbot services but currently shifting his office from noida to Yamuna Vihar. Asked to connect on 4 Nov 2026", "noteEntries": [{"text": "Intersted in AI voicebot and chatbot services but currently shifting his office from noida to Yamuna Vihar. Asked to connect on 4 Nov 2026", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:56:35.350Z"}, {"id": "l1793273221916", "name": "Vikas", "company": "Holidays Crowd", "phone": "8178135417", "alternatePhone": "", "email": "vikas@holidayscrowd.com", "website": "", "industry": "", "product": "MyOperator", "status": "Interested", "totalAmount": 90000.0, "followUp": "2026-11-03", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Interested in Truecaller services. He is not available in India. Asked to call back next month", "noteEntries": [{"text": "Interested in Truecaller services. He is not available in India. Asked to call back next month ", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:57:02.570Z"}, {"id": "l1793272856752", "name": "Kuldeep", "company": "Fuel Shoes", "phone": "9728938426", "alternatePhone": "", "email": "kuldeep@fuelshoes.com", "website": "www.fuelshoes.com", "industry": "Ecommerce", "product": "MyOperator", "status": "Expected Closure", "totalAmount": 36000.0, "followUp": "2026-11-03", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "6 Months - 3 Users - 2000 per user per month.\n\nCustomer want to start after Diwali.", "noteEntries": [{"text": "6 Months - 3 Users - 2000 per user per month.\n\nCustomer want to start after Diwali. ", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:55:49.685Z"}, {"id": "l1793272648703", "name": "Arti Sharma", "company": "JM Patel High School", "phone": "7972434874", "alternatePhone": "", "email": "arti.sharma@dpsnashik.in", "website": "", "industry": "Education", "product": "MyOperator", "status": "Expected Closure", "totalAmount": 64764.0, "followUp": "2026-10-30", "wonDate": "", "owner": "Amit Yadav", "revenueType": "New Revenue", "notes": "Got approval email, Mr. Rajan from Myop team is working on it.\n\nSUV plan\n3 users - Admin Extra", "noteEntries": [{"text": "Got approval email, Mr. Rajan from Myop team is working on it.\n\nSUV plan\n3 users - Admin Extra\n", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:54:31.564Z"}, {"id": "l1793272454374", "name": "Hemant Batra", "company": "Atomic North", "phone": "9625680039", "alternatePhone": "", "email": "hemant.batra@atomicnorth.com", "website": "", "industry": "", "product": "Sb AIBOT", "status": "Demo Schedule", "totalAmount": 50000.0, "followUp": "2026-11-02", "wonDate": "", "owner": "Burhan Ali", "revenueType": "New Revenue", "notes": "Offline Visit scheduled for tomorrow. Details send on Whatsapp. Waiting for the address and location.", "noteEntries": [{"text": "Offline Visit scheduled for tomorrow. Details send on Whatsapp. Waiting for the address and location. ", "createdAt": "2026-10-29T12:13:16.384Z"}], "updatedAt": "2026-10-29T18:54:18.640Z"}, {"id": "myop_001_9VLPCD", "company": "Rozana Rural Commerce Ltd", "name": "Rozana Rural Commerce Ltd", "phone": "", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 599250.0, "wonDate": "2025-12-19", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2025-12-19", "planExpiryDate": "2026-12-19", "notes": "BAN: 9VLPCD · Renewal done", "noteEntries": [{"text": "BAN: 9VLPCD · Renewal done", "createdAt": "2026-10-30T01:12:37.584058"}]}, {"id": "myop_002_2KDUM2", "company": "A to Z saaree", "name": "Sarthak", "phone": "8239355501", "email": "Sarthakcreationofficial@gmail.com", "product": "WhatsApp Business API", "status": "WON", "totalAmount": 13500.0, "wonDate": "2026-02-03", "owner": "Amit Yadav", "planProduct": "WhatsApp Business API", "planName": "WABA only", "planValidity": "6", "planActivationDate": "2026-02-03", "planExpiryDate": "2026-07-30", "notes": "BAN: 2KDUM2 · Alt Contact: 6350429529", "noteEntries": [{"text": "BAN: 2KDUM2 · Alt Contact: 6350429529", "createdAt": "2026-10-30T01:12:37.584129"}]}, {"id": "myop_003_E8MP3E", "company": "UDHAYAKUMAR S", "name": "UDHAYAKUMAR", "phone": "9543617119", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 39000.0, "wonDate": "2026-06-29", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Growth Plan", "planValidity": "6", "planActivationDate": "2026-06-29", "planExpiryDate": "2026-12-15", "notes": "BAN: E8MP3E · Alt Contact: 9597365567 · Reason of Churn: Got some cheaper option", "noteEntries": [{"text": "BAN: E8MP3E · Alt Contact: 9597365567 · Reason of Churn: Got some cheaper option", "createdAt": "2026-10-30T01:12:37.584151"}]}, {"id": "myop_004_RA3SCW", "company": "LBS INFOWAY INDIA PRIVATE LIMITED", "name": "saqar Sayed", "phone": "9920110911", "email": "info@londonbroadband.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 14994.0, "wonDate": "2026-02-08", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Lite 2ch", "planValidity": "6", "planActivationDate": "2026-02-08", "planExpiryDate": "2026-02-15", "notes": "BAN: RA3SCW", "noteEntries": [{"text": "BAN: RA3SCW", "createdAt": "2026-10-30T01:12:37.584351"}]}, {"id": "myop_005_DS783M", "company": "DR. UPADHYAY HEALTHCARE PRIVATE LIMITED", "name": "Dr Upadhaye", "phone": "7991163986", "email": "upadhyayclinics@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 30000.0, "wonDate": "2026-02-12", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "6", "planActivationDate": "2026-02-12", "planExpiryDate": "2026-07-05", "notes": "BAN: DS783M", "noteEntries": [{"text": "BAN: DS783M", "createdAt": "2026-10-30T01:12:37.584375"}]}, {"id": "myop_006_6", "company": "PADMA INFOCOM PRIVATE LIMITED", "name": "Arun", "phone": "8448780892", "email": "arun@reviewadda.com", "product": "Bulk SMS Services", "status": "WON", "totalAmount": 30000.0, "wonDate": "2026-02-13", "owner": "Amit Yadav", "planProduct": "Bulk SMS Services", "planName": "BULK SMS", "planValidity": "12", "planActivationDate": "2026-02-13", "planExpiryDate": "2027-02-13", "notes": "Alt Contact: Rahul CEO: 9818228657", "noteEntries": [{"text": "Alt Contact: Rahul CEO: 9818228657", "createdAt": "2026-10-30T01:12:37.584395"}]}, {"id": "myop_007_7", "company": "PADMA INFOCOM PRIVATE LIMITED", "name": "Arun", "phone": "8448780892", "email": "arun@reviewadda.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 26000.0, "wonDate": "2026-02-13", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "6", "planActivationDate": "2026-02-13", "planExpiryDate": "2026-07-05", "notes": "Alt Contact: Rahul CEO: 9818228657", "noteEntries": [{"text": "Alt Contact: Rahul CEO: 9818228657", "createdAt": "2026-10-30T01:12:37.584413"}]}, {"id": "myop_008_2P5SMP", "company": "Earth Travels", "name": "Nitin", "phone": "9953547559", "email": "manager@nitsaholidays.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 75000.0, "wonDate": "2026-02-17", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "6", "planActivationDate": "2026-02-17", "planExpiryDate": "2026-07-06", "notes": "BAN: 2P5SMP · Alt Contact: Akash: 95604 99054", "noteEntries": [{"text": "BAN: 2P5SMP · Alt Contact: Akash: 95604 99054", "createdAt": "2026-10-30T01:12:37.584431"}]}, {"id": "myop_009_DPH3LG", "company": "SPORTSNTW PRIVATE LIMITED", "name": "Sarthak", "phone": "9821823744", "email": "sarthak@barcaacademy.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 24800.0, "wonDate": "2026-02-19", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "3", "planActivationDate": "2026-02-19", "planExpiryDate": "2026-05-05", "notes": "BAN: DPH3LG", "noteEntries": [{"text": "BAN: DPH3LG", "createdAt": "2026-10-30T01:12:37.584448"}]}, {"id": "myop_010_DS783M", "company": "DR. UPADHYAY HEALTHCARE PRIVATE LIMITED", "name": "Dr Upadhaye", "phone": "7991163986", "email": "upadhyayclinics@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 30010.0, "wonDate": "2026-02-20", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "6", "planActivationDate": "2026-02-20", "planExpiryDate": "2026-08-20", "notes": "BAN: DS783M", "noteEntries": [{"text": "BAN: DS783M", "createdAt": "2026-10-30T01:12:37.584464"}]}, {"id": "myop_011_SSUJZN", "company": "Rajas Eye", "name": "Rajas", "phone": "9201828988", "email": "rajaseyehospital@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 50400.0, "wonDate": "2026-02-21", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-02-21", "planExpiryDate": "2027-02-10", "notes": "BAN: SSUJZN", "noteEntries": [{"text": "BAN: SSUJZN", "createdAt": "2026-10-30T01:12:37.584480"}]}, {"id": "myop_012_7ZDR25", "company": "GANPATRAJ GOLD PRIVATE LIMITED", "name": "Komal", "phone": "9650103446", "email": "hrgurgaon@24karat.co.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 36000.0, "wonDate": "2026-02-24", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "3", "planActivationDate": "2026-02-24", "planExpiryDate": "2026-05-15", "notes": "BAN: 7ZDR25", "noteEntries": [{"text": "BAN: 7ZDR25", "createdAt": "2026-10-30T01:12:37.584504"}]}, {"id": "myop_013_9XV3BN", "company": "GREEN WEB SOFTWARE DEVELOPMENT PRIVATE LIMITED", "name": "Swadeep Singh Tomar", "phone": "9630492007", "email": "info@greenwebsoftwaredevelopment.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 16800.0, "wonDate": "2026-02-26", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV lite", "planValidity": "3", "planActivationDate": "2026-02-26", "planExpiryDate": "2026-02-22", "notes": "BAN: 9XV3BN", "noteEntries": [{"text": "BAN: 9XV3BN", "createdAt": "2026-10-30T01:12:37.584522"}]}, {"id": "myop_014_V32ULD", "company": "SHRIMAD RAJCHANDRA ADHYATMIK SATSANG SADHNA KENDRA", "name": "Veeresh Bevinamar", "phone": "9919919383", "email": "shreyashpatel67@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 120000.0, "wonDate": "2026-02-26", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV lite", "planValidity": "12", "planActivationDate": "2026-02-26", "planExpiryDate": "2026-02-28", "notes": "BAN: V32ULD · Alt Contact: 8160665887", "noteEntries": [{"text": "BAN: V32ULD · Alt Contact: 8160665887", "createdAt": "2026-10-30T01:12:37.584539"}]}, {"id": "myop_015_W2JGG2", "company": "Sant Jaswant Singh Hospital", "name": "Simrin Gill", "phone": "8881100004", "email": "simringill1976@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 48960.0, "wonDate": "2026-02-28", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-02-28", "planExpiryDate": "2027-02-28", "notes": "BAN: W2JGG2", "noteEntries": [{"text": "BAN: W2JGG2", "createdAt": "2026-10-30T01:12:37.584556"}]}, {"id": "myop_016_M23RD2", "company": "CAMPUS MALL PRIVATE LIMITED", "name": "Rajveer", "phone": "8770896529", "email": "rajveer.r@campuswear.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 78000.0, "wonDate": "2026-02-28", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-02-28", "planExpiryDate": "2027-02-28", "notes": "BAN: M23RD2", "noteEntries": [{"text": "BAN: M23RD2", "createdAt": "2026-10-30T01:12:37.584572"}]}, {"id": "myop_017_WRLGL5", "company": "Sant Jaswant Singh Hospital", "name": "Simrin Gill", "phone": "8881100004", "email": "simringill1976@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 32636.0, "wonDate": "2026-02-28", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-02-28", "planExpiryDate": "2027-02-28", "notes": "BAN: WRLGL5", "noteEntries": [{"text": "BAN: WRLGL5", "createdAt": "2026-10-30T01:12:37.584588"}]}, {"id": "myop_018_XMHVEM", "company": "IQBAL IBRAHIM CHUHAN", "name": "IQBAL IBRAHIM CHUHAN", "phone": "", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 11250.0, "wonDate": "2026-03-03", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Lite 2ch", "planValidity": "12", "planActivationDate": "2026-03-03", "planExpiryDate": "2026-03-14", "notes": "BAN: XMHVEM", "noteEntries": [{"text": "BAN: XMHVEM", "createdAt": "2026-10-30T01:12:37.584603"}]}, {"id": "myop_019_64NLAC", "company": "DPS: Kush Learning Association", "name": "Sravanthi Khandavalli", "phone": "9552579196", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 55000.0, "wonDate": "2026-03-10", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Growth Plan", "planValidity": "12", "planActivationDate": "2026-03-10", "planExpiryDate": "2027-03-10", "notes": "BAN: 64NLAC", "noteEntries": [{"text": "BAN: 64NLAC", "createdAt": "2026-10-30T01:12:37.584619"}]}, {"id": "myop_020_C8FHLA", "company": "Royal Developers", "name": "Driffila", "phone": "9667552407", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 45000.0, "wonDate": "2026-03-12", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-03-12", "planExpiryDate": "2027-03-12", "notes": "BAN: C8FHLA", "noteEntries": [{"text": "BAN: C8FHLA", "createdAt": "2026-10-30T01:12:37.584635"}]}, {"id": "myop_021_6XPFXY", "company": "IMPACT K.O.R.E LEARNING LLP", "name": "Rohit", "phone": "8097275420", "email": "rohomajlive@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 21600.0, "wonDate": "2026-03-23", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-03-23", "planExpiryDate": "2027-03-23", "notes": "BAN: 6XPFXY", "noteEntries": [{"text": "BAN: 6XPFXY", "createdAt": "2026-10-30T01:12:37.584655"}]}, {"id": "myop_022_QMDP9E", "company": "WARADE DNYANDEV GULABRAO", "name": "Dnyan Patil", "phone": "8830798247", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 15000.0, "wonDate": "2026-03-26", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-03-26", "planExpiryDate": "2027-03-26", "notes": "BAN: QMDP9E · Alt Contact: 7588075845", "noteEntries": [{"text": "BAN: QMDP9E · Alt Contact: 7588075845", "createdAt": "2026-10-30T01:12:37.584671"}]}, {"id": "myop_023_NEMPQ3", "company": "RAJKOT AAYUSH HOSPITAL LLP", "name": "Ankur Lakhani", "phone": "9913148686", "email": "", "product": "Sb AIBOT", "status": "WON", "totalAmount": 100000.0, "wonDate": "2026-03-31", "owner": "Amit Yadav", "planProduct": "Sb AIBOT", "planName": "AI Voicebot", "planValidity": "12", "planActivationDate": "2026-03-31", "planExpiryDate": "2027-03-31", "notes": "BAN: NEMPQ3", "noteEntries": [{"text": "BAN: NEMPQ3", "createdAt": "2026-10-30T01:12:37.584784"}]}, {"id": "myop_024_NEMPQ3", "company": "RAJKOT AAYUSH HOSPITAL LLP", "name": "Ankur Lakhani", "phone": "9913148686", "email": "", "product": "Sb AIBOT", "status": "WON", "totalAmount": 19500.0, "wonDate": "2026-03-31", "owner": "Amit Yadav", "planProduct": "Sb AIBOT", "planName": "Chatbot", "planValidity": "12", "planActivationDate": "2026-03-31", "planExpiryDate": "2027-03-31", "notes": "BAN: NEMPQ3", "noteEntries": [{"text": "BAN: NEMPQ3", "createdAt": "2026-10-30T01:12:37.584801"}]}, {"id": "myop_025_NEMPQ3", "company": "RAJKOT AAYUSH HOSPITAL LLP", "name": "Ankur Lakhani", "phone": "7572888802", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 167700.0, "wonDate": "2026-03-31", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Scale Plan", "planValidity": "12", "planActivationDate": "2026-03-31", "planExpiryDate": "2027-03-31", "notes": "BAN: NEMPQ3", "noteEntries": [{"text": "BAN: NEMPQ3", "createdAt": "2026-10-30T01:12:37.584817"}]}, {"id": "myop_026_7AP9PB", "company": "Symbiosis Systems & Services Pvt Ltd", "name": "Tejal Tailor", "phone": "9714498170", "email": "tejaltailor@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 21600.0, "wonDate": "2026-04-08", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Incoming Only", "planValidity": "12", "planActivationDate": "2026-04-08", "planExpiryDate": "2027-04-05", "notes": "BAN: 7AP9PB · Alt Contact: Name :: Faiz\nEmail:: Support@Symbiosissystems.in\nnumber :: 6351220128 · Rs.1800 per user only incoming plan", "noteEntries": [{"text": "BAN: 7AP9PB · Alt Contact: Name :: Faiz\nEmail:: Support@Symbiosissystems.in\nnumber :: 6351220128 · Rs.1800 per user only incoming plan", "createdAt": "2026-10-30T01:12:37.584835"}]}, {"id": "myop_027_V9MWNJ", "company": "Delhi Technical College", "name": "Divyanshi", "phone": "8218585844", "email": "sawhney.dimpy@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 110000.0, "wonDate": "2026-04-09", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Growth Plan", "planValidity": "12", "planActivationDate": "2026-04-09", "planExpiryDate": "2027-04-09", "notes": "BAN: V9MWNJ · Alt Contact: Sawhney Dimpy 9205752300 · Bought 2 Growth Plans and will buy TC servics of 90K", "noteEntries": [{"text": "BAN: V9MWNJ · Alt Contact: Sawhney Dimpy 9205752300 · Bought 2 Growth Plans and will buy TC servics of 90K", "createdAt": "2026-10-30T01:12:37.584851"}]}, {"id": "myop_028_7ULCDQ", "company": "Delhi Technical College", "name": "Divyanshi", "phone": "8218585844", "email": "sawhney.dimpy@gmail.com", "product": "Truecaller Verified Business", "status": "WON", "totalAmount": 90000.0, "wonDate": "2026-04-15", "owner": "Amit Yadav", "planProduct": "Truecaller Verified Business", "planName": "Truecaller", "planValidity": "6", "planActivationDate": "2026-04-15", "planExpiryDate": "2026-09-15", "notes": "BAN: 7ULCDQ · Alt Contact: Sawhney Dimpy 9205752300 · Truecaller lite plan ( 15K MRR)", "noteEntries": [{"text": "BAN: 7ULCDQ · Alt Contact: Sawhney Dimpy 9205752300 · Truecaller lite plan ( 15K MRR)", "createdAt": "2026-10-30T01:12:37.584867"}]}, {"id": "myop_029_T7UQ42", "company": "Waterwoods Resorts", "name": "Kitty & Praveen", "phone": "9886025661", "email": "kitty@waterwoods.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 87000.0, "wonDate": "2026-04-22", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-04-22", "planExpiryDate": "2027-04-20", "notes": "BAN: T7UQ42 · Alt Contact: Meenakshi Gupta 919945921404 reservations@waterwoods.in", "noteEntries": [{"text": "BAN: T7UQ42 · Alt Contact: Meenakshi Gupta 919945921404 reservations@waterwoods.in", "createdAt": "2026-10-30T01:12:37.584883"}]}, {"id": "myop_030_7QQSUL", "company": "Trob Auto India PVT Limited", "name": "Gur Simran", "phone": "9891337434", "email": "gursimran.kaur@dmmahindra.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 126000.0, "wonDate": "2026-04-30", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-04-30", "planExpiryDate": "2027-04-30", "notes": "BAN: 7QQSUL · Alt Contact: Puneet : 8588878386, Ajay Accounts : 8130024975", "noteEntries": [{"text": "BAN: 7QQSUL · Alt Contact: Puneet : 8588878386, Ajay Accounts : 8130024975", "createdAt": "2026-10-30T01:12:37.584898"}]}, {"id": "myop_031_CZNMXZ", "company": "Aarav Mahindra", "name": "Ravjot", "phone": "9630056417", "email": "Accounts@aravmotors.com Ravjyot Kaur", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 45000.0, "wonDate": "2026-04-30", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-04-30", "planExpiryDate": "2027-04-30", "notes": "BAN: CZNMXZ · Alt Contact: Surender : 8130033646,9971949605 · Sedan: 48K & Chatbot 6500 per month sold service for an year", "noteEntries": [{"text": "BAN: CZNMXZ · Alt Contact: Surender : 8130033646,9971949605 · Sedan: 48K & Chatbot 6500 per month sold service for an year", "createdAt": "2026-10-30T01:12:37.584914"}]}, {"id": "myop_032_9EGW2T", "company": "Sampurna Diagnostic", "name": "Sumit", "phone": "9770900570", "email": "anurag@sampurnadiagnostics.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 20000.0, "wonDate": "2026-04-30", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "3", "planActivationDate": "2026-04-30", "planExpiryDate": "2026-07-25", "notes": "BAN: 9EGW2T · Alt Contact: Jitendra 9617770400,Anurag\t+91 9617770172", "noteEntries": [{"text": "BAN: 9EGW2T · Alt Contact: Jitendra 9617770400,Anurag\t+91 9617770172", "createdAt": "2026-10-30T01:12:37.584929"}]}, {"id": "myop_033_BM2J6Q", "company": "Saarthiev", "name": "Dheerendra", "phone": "9205948925", "email": "mahesh@saarthiev.com/dheerendra@saarthiev.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 60000.0, "wonDate": "2026-04-30", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "15", "planActivationDate": "2026-04-30", "planExpiryDate": "2027-06-25", "notes": "BAN: BM2J6Q · Alt Contact: Mahesh 9187231955", "noteEntries": [{"text": "BAN: BM2J6Q · Alt Contact: Mahesh 9187231955", "createdAt": "2026-10-30T01:12:37.584945"}]}, {"id": "myop_034_9EGW2T", "company": "Sampurna Diagnostic", "name": "Sumit", "phone": "9770900570", "email": "anurag@sampurnadiagnostics.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 7000.0, "wonDate": "2026-04-30", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-04-30", "planExpiryDate": "2026-07-25", "notes": "BAN: 9EGW2T · Alt Contact: Jitendra 9617770400,Anurag\t+91 9617770172 · Plan upgraded to SUV plan, paid 7K", "noteEntries": [{"text": "BAN: 9EGW2T · Alt Contact: Jitendra 9617770400,Anurag\t+91 9617770172 · Plan upgraded to SUV plan, paid 7K", "createdAt": "2026-10-30T01:12:37.584961"}]}, {"id": "myop_035_35", "company": "Veeresh", "name": "Veeresh", "phone": "8088493907", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 18000.0, "wonDate": "2026-05-19", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV lite", "planValidity": "6", "planActivationDate": "2026-05-19", "planExpiryDate": "2026-11-10", "notes": "", "noteEntries": []}, {"id": "myop_036_36", "company": "Indifuels", "name": "Arpit Shukla", "phone": "9793640074", "email": "arpit.shukla@myindifuels.com", "product": "Truecaller Verified Business", "status": "WON", "totalAmount": 30000.0, "wonDate": "2026-05-28", "owner": "Amit Yadav", "planProduct": "Truecaller Verified Business", "planName": "Truecaller", "planValidity": "12", "planActivationDate": "2026-05-28", "planExpiryDate": "2027-05-20", "notes": "", "noteEntries": []}, {"id": "myop_037_37", "company": "Sarayu Aesthetics PVT", "name": "Dr Nidhi", "phone": "7649999924", "email": "sarayuaestheticspvtltd@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 60000.0, "wonDate": "2026-05-29", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-05-29", "planExpiryDate": "2027-05-20", "notes": "", "noteEntries": []}, {"id": "myop_038_VARNKU", "company": "YHATAW REAL ESTATE FACILITATORS PRIVATE LIMITED", "name": "Nazim", "phone": "7042892600", "email": "nazim@yhataw.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 151200.0, "wonDate": "2026-08-13", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-08-13", "planExpiryDate": "2027-08-10", "notes": "BAN: VARNKU", "noteEntries": [{"text": "BAN: VARNKU", "createdAt": "2026-10-30T01:12:37.585024"}]}, {"id": "myop_039_6QNCNV", "company": "WARADE DNYANDEV GULABRAO", "name": "Pradip", "phone": "7588075845", "email": "Pradip.warade@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 48000.0, "wonDate": "2026-08-31", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-08-31", "planExpiryDate": "2027-08-25", "notes": "BAN: 6QNCNV", "noteEntries": [{"text": "BAN: 6QNCNV", "createdAt": "2026-10-30T01:12:37.585041"}]}, {"id": "myop_040_dsXCQH", "company": "SYNATY AUTOMOTIVE PVT LTD", "name": "Naresh", "phone": "6262624462", "email": "Naresh@synatyauto.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 67827.0, "wonDate": "2026-08-31", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-08-31", "planExpiryDate": "2027-08-31", "notes": "BAN: dsXCQH · 2nd Renewal Completed", "noteEntries": [{"text": "BAN: dsXCQH · 2nd Renewal Completed", "createdAt": "2026-10-30T01:12:37.585057"}]}, {"id": "myop_041_41", "company": "Tristar Motors", "name": "Samir", "phone": "9771446686", "email": "marketing@tristarmotors.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 180000.0, "wonDate": "2026-09-11", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-09-11", "planExpiryDate": "2027-09-10", "notes": "5+1 Users + AI chatbot : 7500 each service,= 15K monthly rental", "noteEntries": [{"text": "5+1 Users + AI chatbot : 7500 each service,= 15K monthly rental", "createdAt": "2026-10-30T01:12:37.585075"}]}, {"id": "myop_042_42", "company": "Rodha Classes", "name": "Ekta Rodha", "phone": "7982212251", "email": "ektajain@rodha.co.in", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 35100.0, "wonDate": "2026-09-14", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "3", "planActivationDate": "2026-09-14", "planExpiryDate": "2026-10-14", "notes": "Rs. 1400: 5 Users, 3 Panel: 1100 each", "noteEntries": [{"text": "Rs. 1400: 5 Users, 3 Panel: 1100 each", "createdAt": "2026-10-30T01:12:37.585091"}]}, {"id": "myop_043_43", "company": "Browseinfo/Iskon", "name": "Mayank Kumar", "phone": "9426623633", "email": "CMayankKumar@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 324000.0, "wonDate": "2026-09-18", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "36", "planActivationDate": "2026-09-18", "planExpiryDate": "2027-09-15", "notes": "5 USER, 1800 PER USER, 3 YEARS", "noteEntries": [{"text": "5 USER, 1800 PER USER, 3 YEARS", "createdAt": "2026-10-30T01:12:37.585108"}]}, {"id": "myop_044_44", "company": "Jaldurga Pump", "name": "Mahesh", "phone": "7276901171", "email": "jaldurgapump@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 48000.0, "wonDate": "2026-09-26", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-09-26", "planExpiryDate": "2027-09-15", "notes": "Alt Contact: 9426623633", "noteEntries": [{"text": "Alt Contact: 9426623633", "createdAt": "2026-10-30T01:12:37.585124"}]}, {"id": "myop_045_45", "company": "Zyro Lifts", "name": "Mahesh", "phone": "7769073522", "email": "pogula.mahesh@zyrolifts.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 150000.0, "wonDate": "2026-10-17", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2026-10-17", "planExpiryDate": "2027-10-10", "notes": "Alt Contact: 8074229096 · 10 User Plan SUV", "noteEntries": [{"text": "Alt Contact: 8074229096 · 10 User Plan SUV", "createdAt": "2026-10-30T01:12:37.585141"}]}, {"id": "myop_046_46", "company": "ARNA LUXURY LIVING PRIVATE LIMITED", "name": "Arpan", "phone": "9811234531", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 0, "wonDate": "2026-01-01", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-01-01", "planExpiryDate": "2027-01-01", "notes": "", "noteEntries": []}, {"id": "myop_047_47", "company": "SILKMALA DESIGNER", "name": "Jatin", "phone": "9925416791", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 0, "wonDate": "2025-12-18", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2025-12-18", "planExpiryDate": "2026-12-15", "notes": "", "noteEntries": []}, {"id": "myop_048_48", "company": "GP LEARNING PRIVATE LIMITED", "name": "Tajinder", "phone": "6388974650", "email": "pratapgagan123@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 0, "wonDate": "2025-10-10", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "12", "planActivationDate": "2025-10-10", "planExpiryDate": "2026-10-10", "notes": "Alt Contact: 8076861057", "noteEntries": [{"text": "Alt Contact: 8076861057", "createdAt": "2026-10-30T01:12:37.585186"}]}, {"id": "myop_049_4R7GKC", "company": "TREE TOPS EDUCATION PRIVATE LIMITED", "name": "Rajesh", "phone": "971562167073", "email": "rkumar@kidskingdom.ae", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 60000.0, "wonDate": "2026-08-10", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Sedan Plan", "planValidity": "12", "planActivationDate": "2026-08-10", "planExpiryDate": "2027-08-10", "notes": "BAN: 4R7GKC", "noteEntries": [{"text": "BAN: 4R7GKC", "createdAt": "2026-10-30T01:12:37.585201"}]}, {"id": "myop_050_50", "company": "CALVIN'S HOSPITALITY & PROPERTY MANAGEMENT", "name": "Javed", "phone": "9975069488", "email": "", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 0, "wonDate": "2026-01-01", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "Growth Plan", "planValidity": "12", "planActivationDate": "2026-01-01", "planExpiryDate": "2027-01-01", "notes": "", "noteEntries": []}, {"id": "myop_051_CDSCA3", "company": "Green Web Software Development", "name": "Adil", "phone": "9630492007", "email": "info@addmecart.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 0, "wonDate": "2026-01-01", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV lite", "planValidity": "12", "planActivationDate": "2026-01-01", "planExpiryDate": "2027-01-01", "notes": "BAN: CDSCA3", "noteEntries": [{"text": "BAN: CDSCA3", "createdAt": "2026-10-30T01:12:37.585225"}]}, {"id": "myop_052_52", "company": "GV Office Tools Private Limited", "name": "Roshan", "phone": "8235847544", "email": "roushangvtools@gmail.com", "product": "MyOperator Cloud Telephony", "status": "WON", "totalAmount": 36000.0, "wonDate": "2026-07-16", "owner": "Amit Yadav", "planProduct": "MyOperator Cloud Telephony", "planName": "SUV Plan", "planValidity": "6", "planActivationDate": "2026-07-16", "planExpiryDate": "2027-01-10", "notes": "Alt Contact: 82358 47544", "noteEntries": [{"text": "Alt Contact: 82358 47544", "createdAt": "2026-10-30T01:12:37.585240"}]}];
+const seedLeads = []; // Customer data removed from source: the Google Sheet is the source of truth.
 function fmtDate(d){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const get=k=>parts.find(p=>p.type===k).value;return `${get('year')}-${get('month')}-${get('day')}`}function dateOffset(days){const [y,m,d]=fmtDate(new Date()).split('-').map(Number);const t=new Date(Date.UTC(y,m-1,d+days));return `${t.getUTCFullYear()}-${String(t.getUTCMonth()+1).padStart(2,'0')}-${String(t.getUTCDate()).padStart(2,'0')}`}function fromStorage(){
   try {
     const x = localStorage.getItem('fieldnoteLeads');
@@ -1804,6 +1823,10 @@ const iconDefaults={overview:'▦',leads:'♙',followups:'◷',active:'♙',due:
 function applyIcons(){document.querySelectorAll('[data-icon]').forEach(el=>{const k=el.dataset.icon;if(dashboardIcons[k])el.textContent=dashboardIcons[k]})}
 function applyFieldLabels(){document.querySelectorAll('[data-field-label]').forEach(el=>{const k=el.dataset.fieldLabel;if(fieldLabels[k])el.textContent=fieldLabels[k]});document.querySelectorAll('[data-field-label-text]').forEach(el=>{const k=el.dataset.fieldLabelText;if(fieldLabels[k])el.textContent=fieldLabels[k]});document.querySelectorAll('[data-field-label-combo]').forEach(el=>{const keys=el.dataset.fieldLabelCombo.split(',');el.textContent=keys.map(k=>fieldLabels[k]).join(' / ').toUpperCase()});applyIcons()}
 function openLabels(){const form=document.getElementById('labelsForm');for(const key of Object.keys(labelDefaults))form.elements[key].value=fieldLabels[key];for(const key of Object.keys(iconDefaults))form.elements['icon_'+key].value=dashboardIcons[key];document.getElementById('labelsDialog').showModal()}
+function saveLocal() {
+  try { localStorage.setItem('fieldnoteLeads', JSON.stringify(leads)); }
+  catch (err) { console.error('LocalStorage write failed:', err); }
+}
 function save(leadToSync, action = "save_lead") {
   // 1. Dual-Storage: LocalStorage with Quota protection
   try {
@@ -2732,8 +2755,7 @@ function showPetReminder() {
   if (!pet) return;
   
   // Never show reminders if locked behind PIN login or no authenticated user
-  const savedId = localStorage.getItem('itifyActiveUserId');
-  if (isMandatoryLoginActive || !savedId || !currentUser) {
+  if (isMandatoryLoginActive || !currentUser) {
     pet.hidden = true;
     return;
   }
@@ -3703,6 +3725,10 @@ function resolveValidityFromSheet(raw) {
 
 async function importSheetCSV(file){
   if (!file) return;
+  if (!currentUser || !currentUser.isAdmin) {
+    showToast('⚠️ Only admin can import leads. Please share the file with Amit.');
+    return;
+  }
   try {
     const rows = parseCSV(await file.text());
     if (rows.length < 2) {
@@ -3788,9 +3814,7 @@ async function importSheetCSV(file){
         planExpiryDate = target.getUTCFullYear() + "-" + String(target.getUTCMonth() + 1).padStart(2, "0") + "-" + String(target.getUTCDate()).padStart(2, "0");
       }
       
-      if (status === 'WON' && (!amount || amount <= 0)) {
-        amount = 15000;
-      }
+      // (Removed: WON rows without an amount were silently set to ₹15,000.)
       
       const row = {
         id: 'l' + Date.now() + Math.random().toString(36).slice(2, 7),
@@ -3852,15 +3876,20 @@ async function importSheetCSV(file){
       apiPost('batch_sync', { leads: leads }).then((res) => {
         if (res && res.success) {
           updateSyncUI('connected', 'Cloud: Active');
+          const skipped = (res.skippedStale || []).length + (res.invalidOwner || []).length;
+          showToast(skipped ? `⚠️ Synced ${res.count}; ${skipped} skipped (newer in Sheet or unknown owner).` : `✓ ${res.count} leads synced to Google Sheet.`);
+          initCloudSync(false); // pull back server timestamps
         } else {
+          if (res?.code === 401) logoutUser(res.error);
           updateSyncUI('error', 'Sync error');
+          showToast('⚠️ Import saved on this device but NOT synced: ' + (res?.error || 'sync failed'));
         }
       }).catch(err => {
         console.warn('Batch sync after CSV import error:', err);
       });
     }
 
-    showToast("✓ Successfully imported " + added + " new leads (" + updated + " updated)! Auto-synced to Cloud.");
+    showToast("Imported " + added + " new leads (" + updated + " updated). Syncing to Google Sheet...");
   } catch (err) {
     console.error(err);
     showToast('Could not parse that CSV. Ensure it is a valid Google Sheets CSV export.');
@@ -3881,12 +3910,8 @@ document.getElementById('dateStamp').textContent = `${weekdayName} · ${todaySta
 
 // ITIFY Safe Reseed Helper
 function restoreDefaultSeeds() {
-  if (confirm('Restore default seed database (150 verified leads)? Any custom leads with unique IDs will be kept.')) {
-    localStorage.removeItem('fieldnoteLeads');
-    leads = fromStorage();
-    render();
-    showToast('✓ Successfully refreshed 150 CRM leads!');
-  }
+  // Seed data removed; reload from the Google Sheet instead.
+  initCloudSync(true);
 }
 
 
@@ -4033,10 +4058,15 @@ async function initCloudSync(notify = false) {
     if (Array.isArray(res.leads)) {
       let mergedCount = 0;
       const cloudIds = new Set();
+      const myQueue = myQueueItems();
+      const pendingSaves = new Set(myQueue.filter(q => q.action === 'save_lead').map(q => String(q.id)));
+      const pendingDeletes = new Set(myQueue.filter(q => q.action === 'delete_lead').map(q => String(q.id)));
       
       res.leads.forEach(cloudLead => {
         if (!cloudLead.id) return;
+        if (pendingDeletes.has(String(cloudLead.id))) return;   // deleted locally, delete not yet synced
         cloudIds.add(String(cloudLead.id));
+        if (pendingSaves.has(String(cloudLead.id)) && leads.some(l => String(l.id) === String(cloudLead.id))) return; // keep unsynced local edit
         cloudLead.followUp = normalizeDate(cloudLead.followUp);
         cloudLead.wonDate = normalizeDate(cloudLead.wonDate);
         if (cloudLead.planActivationDate) cloudLead.planActivationDate = normalizeDate(cloudLead.planActivationDate);
@@ -4055,9 +4085,8 @@ async function initCloudSync(notify = false) {
       // Strict cloud isolation:
       // For sales reps, only keep leads present in server response (rep's assigned leads)
       // For admin, prune leads that were deleted from Google Sheets
-      if (cloudIds.size > 0 || res.leads.length === 0) {
-        leads = leads.filter(l => cloudIds.has(String(l.id)));
-      }
+      // Server is the source of truth, except leads with unsynced local changes
+      leads = leads.filter(l => cloudIds.has(String(l.id)) || pendingSaves.has(String(l.id)));
 
       saveLocal();
       render();
@@ -4072,7 +4101,7 @@ async function initCloudSync(notify = false) {
     }
   } catch (err) {
     console.warn('Cloud sync background pull:', err);
-    updateSyncUI('connected', 'Cloud: Active');
+    updateSyncUI('error', 'Cloud: Unreachable');
   }
 }
 
@@ -4942,16 +4971,18 @@ async function deleteLead(id) {
         logoutUser(res.error);
         return;
       }
-      if (res.code === 403) {
-        showToast(res.error || 'You can only delete leads assigned to you.');
-        return;
-      }
+      // Not deleted on the server: put it back so the screen matches the Sheet
+      leads.unshift(l);
+      saveLocal();
+      render();
       showToast('⚠️ ' + (res.error || 'Delete failed on cloud.'));
       return;
     }
     showToast(`✓ ${l.company || l.name} deleted`);
   } catch(e) {
-    console.warn('Delete cloud sync failed:', e);
+    console.warn('Delete cloud sync failed, queued for retry:', e);
+    enqueueMutation('delete_lead', null, id);
+    showToast(`${l.company || l.name} deleted — will sync when back online`);
   }
 }
 
@@ -5001,11 +5032,18 @@ function enqueueMutation(action, lead, id) {
     id: id || (lead ? lead.id : ''),
     lead: lead,
     baseUpdatedAt: lead ? (lead._baseUpdatedAt || lead.updatedAt || '') : '',
+    user: currentUser ? currentUser.name : '',
     retries: 0
   };
   offlineQueue.push(item);
   saveOfflineQueue();
   flushOfflineQueue();
+}
+
+// Queue items belonging to the logged-in user (legacy untagged items count as theirs)
+function myQueueItems() {
+  if (!currentUser) return [];
+  return offlineQueue.filter(q => (q.user || currentUser.name) === currentUser.name);
 }
 
 let isFlushingQueue = false;
@@ -5023,26 +5061,51 @@ async function flushOfflineQueue() {
   isFlushingQueue = true;
   updateDataShieldUI();
   
-  while (offlineQueue.length > 0 && navigator.onLine) {
-    const item = offlineQueue[0];
+  while (navigator.onLine && currentUser) {
+    // Only send this user's items; others wait until their owner logs in.
+    const qIdx = offlineQueue.findIndex(q => (q.user || currentUser.name) === currentUser.name);
+    if (qIdx === -1) break;
+    const item = offlineQueue[qIdx];
+    const localLead = item.id ? leads.find(l => String(l.id) === String(item.id)) : null;
+    // Use the freshest known version, so back-to-back edits don't conflict with each other
+    const baseUpdatedAt = (localLead && (localLead._baseUpdatedAt || localLead.updatedAt)) || item.baseUpdatedAt || '';
+
+    let res;
     try {
-      const res = await apiPost(item.action, {
-        lead: item.lead,
-        id: item.id,
-        baseUpdatedAt: item.baseUpdatedAt
-      });
-      if (res && !res.success) {
-        if (res.code === 401) {
-          logoutUser(res.error);
-          break;
-        }
-      }
-      offlineQueue.shift();
-      saveOfflineQueue();
-    } catch(err) {
-      console.warn('Sync queue flush pause:', err);
-      break;
+      res = await apiPost(item.action, { lead: item.lead, id: item.id, baseUpdatedAt });
+    } catch (err) {
+      console.warn('Sync queue paused (network):', err);
+      break; // keep item; retry when back online
     }
+
+    if (res && res.success) {
+      if (res.updatedAt && localLead) {
+        localLead.updatedAt = res.updatedAt;
+        localLead._baseUpdatedAt = res.updatedAt;
+        saveLocal();
+      }
+    } else if (res && res.code === 401) {
+      logoutUser(res.error);
+      break;
+    } else if (res && (res.code === 503 || res.code === 500) && (item.retries || 0) < 3) {
+      item.retries = (item.retries || 0) + 1;
+      saveOfflineQueue();
+      updateSyncUI('error', res.error || 'Sync error');
+      break; // transient; retry later
+    } else if (res && res.code === 409 && res.conflict && res.current) {
+      const cur = res.current;
+      cur._baseUpdatedAt = cur.updatedAt || '';
+      const i = leads.findIndex(l => String(l.id) === String(cur.id));
+      if (i >= 0) leads[i] = cur; else leads.push(cur);
+      saveLocal();
+      render();
+      showToast(`⚠️ ${cur.company || cur.name}: changed by someone else. Latest version loaded — please re-apply your change.`);
+    } else {
+      const label = item.lead ? (item.lead.company || item.lead.name) : item.id;
+      showToast(`⚠️ Not saved to cloud (${label}): ${res?.error || 'rejected by server'}`);
+    }
+    offlineQueue.splice(qIdx, 1);
+    saveOfflineQueue();
   }
   
   isFlushingQueue = false;
